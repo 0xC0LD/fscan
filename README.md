@@ -1,2 +1,2 @@
 # fscan
-file scanne (C#, console)
+file scanner (C#, console)
