@@ -17,10 +17,10 @@ namespace fscan
         {
             Console.WriteLine("");
             Console.WriteLine(" +===[ ABOUT ]");
-            Console.WriteLine(" | ABOUT.....: folder/file scanner");
+            Console.WriteLine(" | ABOUT.....: file scanner/searcher");
             Console.WriteLine(" | AUTHOR....: 0xC0LD");
             Console.WriteLine(" | BUILT IN..: C# .NET");
-            Console.WriteLine(" | VERSION...: 11");
+            Console.WriteLine(" | VERSION...: 13");
             Console.WriteLine(" | USAGE.....: fscan.exe <file/command> <command2> <cmd3> <cmd4> ...");
             Console.WriteLine("");
             Console.WriteLine(" +===[ STANDARD OPTIONS ]");
@@ -30,8 +30,8 @@ namespace fscan
             Console.WriteLine(" | -v = find corrupt videos (uses ffmpeg)");
             Console.WriteLine(" | -s = find video files that have (no) sound/audio (uses ffmpeg)");
             Console.WriteLine(" |      (t = file with sound, f = file without sound)");
-            Console.WriteLine(" |      (use -t to only print files with sound");
-            Console.WriteLine(" |      (use -f to only print files without sound"); 
+            Console.WriteLine(" |      (use -t to only print files with sound)");
+            Console.WriteLine(" |      (use -f to only print files without sound)"); 
             Console.WriteLine(" |      (printed files will be sent to runtime options if specified)");
             Console.WriteLine("");
             Console.WriteLine(" +===[ RUNTIME OPTIONS / OPTIONS WHILE PROCESSING ]");
@@ -45,8 +45,8 @@ namespace fscan
             Console.WriteLine(" | -la = print file sizes (ascending order)");
             Console.WriteLine(" | -ld = print file sizes (descending order)");
             Console.WriteLine(" | -f  = print files with over 260 characters in file path (too long)");
-            Console.WriteLine(" | -ta = print video lenght (ascending order)");
-            Console.WriteLine(" | -td = print video lenght (descending order)");
+            Console.WriteLine(" | -ta = print video length (ascending order)");
+            Console.WriteLine(" | -td = print video length (descending order)");
             Console.WriteLine("");
             Console.WriteLine(" +===[ EXAMPLES ]");
             Console.WriteLine(" | > fscan -s -a -f -d");
@@ -66,7 +66,7 @@ namespace fscan
         private static bool ONLY_TRUE = false;
         private static bool ONLY_FALSE = false;
 
-        private static int print_count = 0;
+        private static int ScannedCount = 0;
 
         struct aFile
         {
@@ -270,6 +270,8 @@ namespace fscan
                     Console.WriteLine("");
 
                 } else { ht_filenames.Add(filename1, file1); }
+
+                ScannedCount++;
             }
 
             th.Abort();
@@ -311,6 +313,8 @@ namespace fscan
 
                 }
                 else { ht_filenames.Add(filename1, file1); }
+
+                ScannedCount++;
             }
 
             th.Abort();
@@ -353,6 +357,8 @@ namespace fscan
 
                 }
                 else { ht_filenames.Add(hash1, file1); }
+
+                ScannedCount++;
             }
 
             th.Abort();
@@ -436,7 +442,7 @@ namespace fscan
                     }
                 }
 
-                print_count++;
+                ScannedCount++;
             }
 
             th.Abort();
@@ -522,7 +528,7 @@ namespace fscan
                     }
                 }
 
-                print_count++;
+                ScannedCount++;
             }
 
             th.Abort();
@@ -536,7 +542,7 @@ namespace fscan
             while (true)
             {
                 Console.ReadKey(true);
-                Console.WriteLine(": tested " + print_count + " file(s)");
+                Console.WriteLine(": tested " + ScannedCount + " file(s)");
             }
             
         }
@@ -544,7 +550,7 @@ namespace fscan
         {
             Console.WriteLine("");
             Console.WriteLine("");
-            Console.WriteLine("> scanned " + print_count + " file(s)");
+            Console.WriteLine("> scanned " + ScannedCount + " file(s)");
         }
         
 
@@ -663,7 +669,7 @@ namespace fscan
 
             Console.WriteLine("> found " + files.Count + " file(s)");
             if (files.Count == 0) { return 1; }
-            Console.WriteLine("> sorting by video lenght...");
+            Console.WriteLine("> sorting by video length...");
             Console.WriteLine("");
             
             try
@@ -704,7 +710,7 @@ namespace fscan
             
             string format = "{0,-" + longest_numb + "} {1,-" + longest_desc + "} {2,0}";
 
-            Console.WriteLine(format, "Numb", "Lenght", "Path");
+            Console.WriteLine(format, "Numb", "length", "Path");
 
             foreach (aFile file in files_)
             {
