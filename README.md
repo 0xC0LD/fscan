@@ -1,13 +1,13 @@
 # fscan
-file scanner (C#, console)
+file scanner/searcher (C#, console)
 
 > fscan
 ```
  +===[ ABOUT ]
- | ABOUT.....: folder/file scanner
+ | ABOUT.....: file scanner/searcher
  | AUTHOR....: 0xC0LD
  | BUILT IN..: C# .NET
- | VERSION...: 12
+ | VERSION...: 13
  | USAGE.....: fscan.exe <file/command> <command2> <cmd3> <cmd4> ...
 
  +===[ STANDARD OPTIONS ]
@@ -17,8 +17,8 @@ file scanner (C#, console)
  | -v = find corrupt videos (uses ffmpeg)
  | -s = find video files that have (no) sound/audio (uses ffmpeg)
  |      (t = file with sound, f = file without sound)
- |      (use -t to only print files with sound
- |      (use -f to only print files without sound
+ |      (use -t to only print files with sound)
+ |      (use -f to only print files without sound)
  |      (printed files will be sent to runtime options if specified)
 
  +===[ RUNTIME OPTIONS / OPTIONS WHILE PROCESSING ]
@@ -32,8 +32,8 @@ file scanner (C#, console)
  | -la = print file sizes (ascending order)
  | -ld = print file sizes (descending order)
  | -f  = print files with over 260 characters in file path (too long)
- | -ta = print video lenght (ascending order)
- | -td = print video lenght (descending order)
+ | -ta = print video length (ascending order)
+ | -td = print video length (descending order)
 
  +===[ EXAMPLES ]
  | > fscan -s -a -f -d
