@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Threading;
-using Microsoft.VisualBasic.FileIO;
 using System.Diagnostics;
-using WMPLib;
 using System.Collections;
 using System.Security.Cryptography;
+using System.Drawing;
+using Microsoft.VisualBasic.FileIO;
+using System.Security;
+using WMPLib;
 
 namespace fscan
 {
@@ -19,14 +21,15 @@ namespace fscan
             Console.WriteLine(" +===[ ABOUT ]");
             Console.WriteLine(" | ABOUT.....: file scanner/searcher");
             Console.WriteLine(" | AUTHOR....: 0xC0LD");
-            Console.WriteLine(" | BUILT IN..: C# .NET");
-            Console.WriteLine(" | VERSION...: 13");
+            Console.WriteLine(" | BUILT IN..: VS C# .NET");
+            Console.WriteLine(" | VERSION...: 14");
             Console.WriteLine(" | USAGE.....: fscan.exe <file/command> <command2> <cmd3> <cmd4> ...");
             Console.WriteLine("");
             Console.WriteLine(" +===[ STANDARD OPTIONS ]");
-            Console.WriteLine(" | -c = find duplicate files (by name)");
-            Console.WriteLine(" | -e = find files that have same names but different extensions");
-            Console.WriteLine(" | -i = find duplicate files (by md5 checksum hash)");
+            Console.WriteLine(" | -c = find duplicate files by name.ext");
+            Console.WriteLine(" | -e = find duplicate files by name");
+            Console.WriteLine(" | -i = find duplicate files by md5 checksum hash");
+            Console.WriteLine(" | -p = find duplicate images (*.jpg, *.jpeg, *.png, *.bmp)");
             Console.WriteLine(" | -v = find corrupt videos (uses ffmpeg)");
             Console.WriteLine(" | -s = find video files that have (no) sound/audio (uses ffmpeg)");
             Console.WriteLine(" |      (t = file with sound, f = file without sound)");
@@ -35,11 +38,11 @@ namespace fscan
             Console.WriteLine(" |      (printed files will be sent to runtime options if specified)");
             Console.WriteLine("");
             Console.WriteLine(" +===[ RUNTIME OPTIONS / OPTIONS WHILE PROCESSING ]");
-            Console.WriteLine(" | -a = also scan subdirectories"); 
+            Console.WriteLine(" | -a = also scan subdirectories");
+            Console.WriteLine(" | -1 = use first file (del/mov/...)");
+            Console.WriteLine(" | -2 = use second file (del/mov/...) (default)");
             Console.WriteLine(" | -d = send the found file to recycle bin");
             Console.WriteLine(" | -m = move the found file to a folder (fscan_dir)");
-            Console.WriteLine(" |   *if -d and -m are specified, in this case, the first option will be chosen (-d)");
-            Console.WriteLine(" |   *if -m and -d are specified, in this case, the first option will be chosen (-m)");
             Console.WriteLine("");
             Console.WriteLine(" +===[ PRINT (only) OPTIONS ]");
             Console.WriteLine(" | -la = print file sizes (ascending order)");
@@ -66,6 +69,8 @@ namespace fscan
         private static bool ONLY_TRUE = false;
         private static bool ONLY_FALSE = false;
 
+        private static bool useSecondItem = true;
+        
         private static int ScannedCount = 0;
 
         struct aFile
@@ -100,14 +105,15 @@ namespace fscan
             }
             
             //check for process options
-            bool ignore = false;
             foreach (string arg in args)
             {
                 switch (arg)
                 {
                     case "-a": { mode = System.IO.SearchOption.AllDirectories; break; }
-                    case "-d": { if (!ignore) { ignore = true; DELETE = true; } break; }
-                    case "-m": { if (!ignore) { ignore = true; MOVE = true; } break; }
+                    case "-d": { DELETE = true; break; }
+                    case "-m": { MOVE   = true; break; }
+                    case "-1": { useSecondItem = false; break; }
+                    case "-2": { useSecondItem = true;  break; }
                 }
             }
 
@@ -119,6 +125,7 @@ namespace fscan
                     case "-c": { return option_find_dupes(); }
                     case "-e": { return option_find_dupes_noext(); }
                     case "-i": { return option_find_dupes_md5hash(); }
+                    case "-p": { return option_find_dupes_img(); }
                     case "-v":
                         {
                             foreach (string arg_ in args)
@@ -176,64 +183,45 @@ namespace fscan
                 Console.WriteLine("> last access time..: " + fi.LastAccessTime);
                 Console.WriteLine("> last write time...: " + fi.LastWriteTime);
                 
-                switch (fi.Extension)
+                foreach(string t in VideoTypes)
                 {
-                    case ".mp4": 
-                    case ".webm":
-                    case ".avi": 
-                    case ".mov": 
-                    case ".mkv": 
-                    case ".flv": 
-                    case ".mpeg":
-                    case ".mpg": 
-                    case ".wmv":
-                        {
-                            Process ffmpeg = new Process();
-                            ffmpeg.StartInfo.UseShellExecute = false;
-                            ffmpeg.StartInfo.RedirectStandardOutput = true;
-                            ffmpeg.StartInfo.RedirectStandardError = true;
-                            ffmpeg.StartInfo.FileName = "ffmpeg.exe";
-                            ffmpeg.StartInfo.Arguments = "-v error -i " + "\"" + file + "\"" + " -f null -";
-                            ffmpeg.Start();
+                    if (fi.Extension == t)
+                    {
+                        Process ffmpeg = new Process();
+                        ffmpeg.StartInfo.UseShellExecute = false;
+                        ffmpeg.StartInfo.RedirectStandardOutput = true;
+                        ffmpeg.StartInfo.RedirectStandardError = true;
+                        ffmpeg.StartInfo.FileName = "ffmpeg.exe";
+                        ffmpeg.StartInfo.Arguments = "-v error -i " + "\"" + file + "\"" + " -f null -";
+                        ffmpeg.Start();
 
 
-                            string ffmpeg_output = ffmpeg.StandardError.ReadToEnd();
-                            ffmpeg.WaitForExit();
+                        string ffmpeg_output = ffmpeg.StandardError.ReadToEnd();
+                        ffmpeg.WaitForExit();
 
-                            //empty = no errors
-                            if (string.IsNullOrEmpty(ffmpeg_output))
-                            {
-                                Console.WriteLine("> is playable.......: true");
-                            }
-                            else
-                            {
-                                Console.WriteLine("> is playable.......: false");
-                            }
+                        //empty = no errors
+                        if (string.IsNullOrEmpty(ffmpeg_output)) { Console.WriteLine("> is playable.......: true"); }
+                        else { Console.WriteLine("> is playable.......: false"); }
 
-                            Process ffprobe = new Process();
-                            ffprobe.StartInfo.UseShellExecute = false;
-                            ffprobe.StartInfo.RedirectStandardOutput = true;
-                            ffprobe.StartInfo.RedirectStandardError = true;
-                            ffprobe.StartInfo.FileName = "ffprobe.exe";
-                            ffprobe.StartInfo.Arguments = "-i " + "\"" + file + "\"" + " -show_streams -select_streams a -loglevel error";
-                            ffprobe.Start();
+                        Process ffprobe = new Process();
+                        ffprobe.StartInfo.UseShellExecute = false;
+                        ffprobe.StartInfo.RedirectStandardOutput = true;
+                        ffprobe.StartInfo.RedirectStandardError = true;
+                        ffprobe.StartInfo.FileName = "ffprobe.exe";
+                        ffprobe.StartInfo.Arguments = "-i " + "\"" + file + "\"" + " -show_streams -select_streams a -loglevel error";
+                        ffprobe.Start();
 
-                            string ffprobe_output = ffprobe.StandardOutput.ReadToEnd();
-                            ffprobe.WaitForExit();
+                        string ffprobe_output = ffprobe.StandardOutput.ReadToEnd();
+                        ffprobe.WaitForExit();
 
-                            //empty = no sound
-                            if (string.IsNullOrEmpty(ffprobe_output))
-                            {
-                                Console.WriteLine("> has audio.........: false");
-                            }
-                            else
-                            {
-                                Console.WriteLine("> has audio.........: true");
-                            }
+                        //empty = no sound
+                        if (string.IsNullOrEmpty(ffprobe_output)) { Console.WriteLine("> has audio.........: false"); }
+                        else                                      { Console.WriteLine("> has audio.........: true"); }
 
-                            break;
-                        }
+                        break;
+                    }
                 }
+                
             }
             return 0;
         }
@@ -242,9 +230,9 @@ namespace fscan
         {
             Console.WriteLine("> scan option: -c");
             Console.WriteLine("> path: " + Environment.CurrentDirectory);
-            List<string> files = Directory.GetFiles(Environment.CurrentDirectory, "*.*", mode).ToList();
-            Console.WriteLine("> found " + files.Count + " file(s)");
-            if (files.Count == 0) { return 1; }
+            string[] files = Directory.GetFiles(Environment.CurrentDirectory, "*.*", mode);
+            Console.WriteLine("> found " + files.Length + " file(s)");
+            if (files.Length == 0) { return 1; }
             Console.WriteLine("> starting the comparison...");
             Console.WriteLine("");
 
@@ -252,24 +240,22 @@ namespace fscan
             th.Start();
             
             int count = 0;
-            Hashtable ht_filenames = new Hashtable();
+            Hashtable table = new Hashtable();
             foreach (string file1 in files)
             {
                 string filename1 = GetFileName(file1);
-                if (ht_filenames.ContainsKey(filename1))
+                if (table.ContainsKey(filename1))
                 {
-                    //get file2 from hash table (file that has been added earlier)
-                    string file2 = string.Empty;
-                    foreach(string k in ht_filenames.Keys) { if (k == filename1) { file2 = ht_filenames[k].ToString(); break; } }
+                    // get file2 from hash table (file that has been added earlier)
+                    string file2 = table[filename1].ToString();
 
                     count++;
-                    Console.WriteLine(count + ": " + file2);
                     Console.WriteLine(count + ": " + file1);
-                    if      (DELETE) { file_del(file1); }
-                    else if (MOVE)   { file_mov(file1); }
+                    Console.WriteLine(count + ": " + file2);
+                    processFile2(file1, file2);
                     Console.WriteLine("");
 
-                } else { ht_filenames.Add(filename1, file1); }
+                } else { table.Add(filename1, file1); }
 
                 ScannedCount++;
             }
@@ -283,9 +269,9 @@ namespace fscan
         {
             Console.WriteLine("> scan option: -e");
             Console.WriteLine("> path: " + Environment.CurrentDirectory);
-            List<string> files = Directory.GetFiles(Environment.CurrentDirectory, "*.*", mode).ToList();
-            Console.WriteLine("> found " + files.Count + " file(s)");
-            if (files.Count == 0) { return 1; }
+            string[] files = Directory.GetFiles(Environment.CurrentDirectory, "*.*", mode);
+            Console.WriteLine("> found " + files.Length + " file(s)");
+            if (files.Length == 0) { return 1; }
             Console.WriteLine("> starting the comparison...");
             Console.WriteLine("");
 
@@ -293,26 +279,24 @@ namespace fscan
             th.Start();
 
             int count = 0;
-            Hashtable ht_filenames = new Hashtable();
+            Hashtable table = new Hashtable();
             foreach (string file1 in files)
             {
                 FileInfo fi1 = new FileInfo(file1);
                 string filename1 = fi1.Name.Replace(fi1.Extension, ""); //get name without extension
-                if (ht_filenames.ContainsKey(filename1))
+                if (table.ContainsKey(filename1))
                 {
-                    //get file2 from hash table (file that has been added earlier)
-                    string file2 = string.Empty;
-                    foreach (string k in ht_filenames.Keys) { if (k == filename1) { file2 = ht_filenames[k].ToString(); break; } }
+                    // get file2 from hash table (file that has been added earlier)
+                    string file2 = table[filename1].ToString();
 
                     count++;
-                    Console.WriteLine(count + ": " + file2);
                     Console.WriteLine(count + ": " + file1);
-                    if (DELETE) { file_del(file1); }
-                    else if (MOVE) { file_mov(file1); }
+                    Console.WriteLine(count + ": " + file2);
+                    processFile2(file1, file2);
                     Console.WriteLine("");
 
                 }
-                else { ht_filenames.Add(filename1, file1); }
+                else { table.Add(filename1, file1); }
 
                 ScannedCount++;
             }
@@ -326,9 +310,7 @@ namespace fscan
         {
             Console.WriteLine("> scan option: -i");
             Console.WriteLine("> path: " + Environment.CurrentDirectory);
-            
             string[] files = Directory.GetFiles(Environment.CurrentDirectory, "*.*", mode);
-            
             Console.WriteLine("> found " + files.Length + " file(s)");
             if (files.Length == 0) { return 1; }
             Console.WriteLine("> starting the comparison...");
@@ -338,25 +320,70 @@ namespace fscan
             th.Start();
 
             int count = 0;
-            Hashtable ht_filenames = new Hashtable();
+            Hashtable table = new Hashtable();
             foreach (string file1 in files)
             {
                 string hash1 = CalculateMD5(file1);
-                if (ht_filenames.ContainsKey(hash1))
+                if (table.ContainsKey(hash1))
                 {
-                    //get file2 from hash table (file that has been added earlier)
-                    string file2 = string.Empty;
-                    foreach (string k in ht_filenames.Keys) { if (k == hash1) { file2 = ht_filenames[k].ToString(); break; } }
+                    // get file2 from hash table (file that has been added earlier)
+                    string file2 = table[hash1].ToString();
 
                     count++;
-                    Console.WriteLine(count + ": " + file2 + " (" + hash1 + ")");
                     Console.WriteLine(count + ": " + file1 + " (" + hash1 + ")");
-                    if (DELETE) { file_del(file1); }
-                    else if (MOVE) { file_mov(file1); }
+                    Console.WriteLine(count + ": " + file2 + " (" + hash1 + ")");
+                    processFile2(file1, file2);
                     Console.WriteLine("");
 
                 }
-                else { ht_filenames.Add(hash1, file1); }
+                else { table.Add(hash1, file1); }
+
+                ScannedCount++;
+            }
+
+            th.Abort();
+            print_info_end();
+
+            return 0;
+        }
+        private static int option_find_dupes_img()
+        {
+            Console.WriteLine("> scan option: -p");
+            Console.WriteLine("> path: " + Environment.CurrentDirectory);
+
+            List<string> files = new List<string>();
+            files.AddRange(Directory.GetFiles(Environment.CurrentDirectory, "*.png", mode));
+            files.AddRange(Directory.GetFiles(Environment.CurrentDirectory, "*.jpg", mode));
+            files.AddRange(Directory.GetFiles(Environment.CurrentDirectory, "*.jpeg", mode));
+
+            Console.WriteLine("> found " + files.Count + " file(s)");
+            if (files.Count == 0) { return 1; }
+            Console.WriteLine("> starting the comparison...");
+            Console.WriteLine("");
+
+            Thread th = new Thread(print_info) { IsBackground = true };
+            th.Start();
+
+            int count = 0;
+            Hashtable table = new Hashtable();
+            foreach (string file1 in files)
+            {
+                Image img = Image.FromFile(file1);
+                string hash1 = GetImgHash(new Bitmap(img, new Size(16, 16)));
+                img.Dispose();
+                if (table.ContainsKey(hash1))
+                {
+                    // get file2 from hash table (file that has been added earlier)
+                    string file2 = table[hash1].ToString();
+
+                    count++;
+                    Console.WriteLine(count + ": " + file1);
+                    Console.WriteLine(count + ": " + file2);
+                    processFile2(file1, file2);
+                    Console.WriteLine("");
+
+                }
+                else { table.Add(hash1, file1); }
 
                 ScannedCount++;
             }
@@ -415,14 +442,7 @@ namespace fscan
                     if (ONLY_TRUE)
                     {
                         Console.WriteLine("T: " + file);
-                        if (DELETE)
-                        {
-                            file_del(file);
-                        }
-                        else if (MOVE)
-                        {
-                            file_mov(file);
-                        }
+                        processFile(file);
                     }
                 }
                 else
@@ -431,14 +451,7 @@ namespace fscan
                     if (ONLY_FALSE)
                     {
                         Console.WriteLine("F: " + file);
-                        if (DELETE)
-                        {
-                            file_del(file);
-                        }
-                        else if (MOVE)
-                        {
-                            file_mov(file);
-                        }
+                        processFile(file);
                     }
                 }
 
@@ -501,14 +514,7 @@ namespace fscan
                     if (ONLY_TRUE)
                     {
                         Console.WriteLine("T: " + file);
-                        if (DELETE)
-                        {
-                            file_del(file);
-                        }
-                        else if (MOVE)
-                        {
-                            file_mov(file);
-                        }
+                        processFile(file);
                     }
                 }
                 else
@@ -517,14 +523,7 @@ namespace fscan
                     if (ONLY_FALSE)
                     {
                         Console.WriteLine("F: " + file);
-                        if (DELETE)
-                        {
-                            file_del(file);
-                        }
-                        else if (MOVE)
-                        {
-                            file_mov(file);
-                        }
+                        processFile(file);
                     }
                 }
 
@@ -548,12 +547,9 @@ namespace fscan
         }
         private static void print_info_end()
         {
-            Console.WriteLine("");
-            Console.WriteLine("");
             Console.WriteLine("> scanned " + ScannedCount + " file(s)");
         }
         
-
         private static int option_print_longnames()
         {
             Console.WriteLine("> print option: -l");
@@ -570,31 +566,25 @@ namespace fscan
                 if (file.Length >= 260)
                 {
                     count++;
-                    Console.WriteLine(count + ": " +file);
+                    Console.WriteLine(count + ": " + file);
                 }
 }
 
             if (count == 0)
             {
-                Console.WriteLine("... everything seems to be alright...");
+                Console.WriteLine("> 0 errors");
             }
 
             return 0;
         }
         private static int option_print_size(bool descend = false)
         {
-            if (descend)
-            {
-                Console.WriteLine("> print option: -ld");
-            }
-            else
-            {
-                Console.WriteLine("> print option: -la");
-            }
+            if (descend) { Console.WriteLine("> print option: -ld"); }
+            else         { Console.WriteLine("> print option: -la"); }
             
             Console.WriteLine("> path: " + Environment.CurrentDirectory);
 
-            string[] files = Directory.EnumerateFiles(Environment.CurrentDirectory, "*.*", mode).ToArray();
+            string[] files = Directory.GetFiles(Environment.CurrentDirectory, "*.*", mode);
 
             Console.WriteLine("> found " + files.Length + " file(s)");
             Console.WriteLine("> sorting by size....");
@@ -602,27 +592,22 @@ namespace fscan
 
             try
             {
-                if (descend)
-                {
-                    files = files.OrderByDescending(f => new FileInfo(f).Length).ToArray();
-                }
-                else
-                {
-                    files = files.OrderBy(f => new FileInfo(f).Length).ToArray();
-                }
+                if (descend) { files = files.OrderByDescending(f => new FileInfo(f).Length).ToArray(); }
+                else         { files = files.OrderBy          (f => new FileInfo(f).Length).ToArray(); }
             }
-            catch (PathTooLongException)
+            catch (PathTooLongException e)
             {
-                Console.WriteLine("There are files with names over 260 characters...");
+                Console.WriteLine("ERR[ArgumentNullException]: " + e.Message);
+                Console.WriteLine("if there are files with names over 260 characters...");
                 Console.WriteLine("... use the -l option to find them");
                 return 1;
             }
-            catch (ArgumentNullException) { Console.WriteLine("ERR[ArgumentNullException]"); return 1; }
-            catch (System.Security.SecurityException) { Console.WriteLine("ERR[SecurityException]"); return 1; }
-            catch (ArgumentException) { Console.WriteLine("ERR[ArgumentException]"); return 1; }
-            catch (UnauthorizedAccessException) { Console.WriteLine("ERR[UnauthorizedAccessException]"); return 1; }
-            catch (NotSupportedException) { Console.WriteLine("ERR[NotSupportedException]"); return 1; }
-            catch (Exception) { Console.WriteLine("ERR[Exception]"); return 1; }
+            catch (ArgumentNullException e)       { Console.WriteLine("ERR[ArgumentNullException]: "       + e.Message); return 1; }
+            catch (SecurityException e)           { Console.WriteLine("ERR[SecurityException]: "           + e.Message); return 1; }
+            catch (ArgumentException e)           { Console.WriteLine("ERR[ArgumentException]: "           + e.Message); return 1; }
+            catch (UnauthorizedAccessException e) { Console.WriteLine("ERR[UnauthorizedAccessException]: " + e.Message); return 1; }
+            catch (NotSupportedException e)       { Console.WriteLine("ERR[NotSupportedException]: "       + e.Message); return 1; }
+            catch (Exception e)                   { Console.WriteLine("ERR[Exception]: "                   + e.Message); return 1; }
 
             int longest_numb = 4;
             int longest_desc = 4;
@@ -631,41 +616,28 @@ namespace fscan
             foreach (string file in files)
             {
                 count++;
-
-                //get file info
                 FileInfo fi = new FileInfo(file);
-
-                //make file
                 aFile fi_ = new aFile() { path = fi.FullName, numb = count.ToString() + ".", desc = ROund(fi.Length) + " (" + fi.Length + " bytes)" };
-
-                //add
                 files_.Add(fi_);
-
-                //get longest size char len
+                
                 if (fi_.desc.Length > longest_desc) { longest_desc = fi_.desc.Length; }
                 if (fi_.numb.Length > longest_numb) { longest_numb = fi_.numb.Length; }
             }
             
             string format = "{0,-" + longest_numb + "} {1,-"+ longest_desc + "} {2,0}";
-
             Console.WriteLine(format, "Numb", "Size", "Path");
-            
-            foreach (aFile file in files_)
-            {
-                Console.WriteLine(format, file.numb, file.desc, file.path);
-            }
-            
+            foreach (aFile file in files_) { Console.WriteLine(format, file.numb, file.desc, file.path); }
+
             return 0;
         }
         private static int option_print_duration(bool descend = false)
         {
-            Console.WriteLine("> scan option: -td");
+            if (descend) { Console.WriteLine("> print option: -td"); }
+            else         { Console.WriteLine("> print option: -ta"); }
             Console.WriteLine("> path: " + Environment.CurrentDirectory);
-
-            //get files
+            
             List<string> files = new List<string>();
-            foreach (string type in VideoTypes)
-            { foreach (string file in Directory.GetFiles(Environment.CurrentDirectory, "*" + type, mode)) { files.Add(file); } }
+            foreach (string type in VideoTypes) { files.AddRange(Directory.GetFiles(Environment.CurrentDirectory, "*" + type, mode)); }
 
             Console.WriteLine("> found " + files.Count + " file(s)");
             if (files.Count == 0) { return 1; }
@@ -674,14 +646,8 @@ namespace fscan
             
             try
             {
-                if (descend)
-                {
-                    files = files.OrderByDescending(f => new WindowsMediaPlayer().newMedia(f).duration).ToList();
-                }
-                else
-                {
-                    files = files.OrderBy(f => new WindowsMediaPlayer().newMedia(f).duration).ToList();
-                }
+                if (descend) { files = files.OrderByDescending(f => new WindowsMediaPlayer().newMedia(f).duration).ToList(); }
+                else         { files = files.OrderBy          (f => new WindowsMediaPlayer().newMedia(f).duration).ToList(); }
             }
             catch (Exception e)
             {
@@ -696,31 +662,28 @@ namespace fscan
             foreach (string file in files)
             {
                 count++;
-                
-                //make file
                 aFile fi_ = new aFile() { path = file, numb = count.ToString() + ".", desc = ROund_time(new WindowsMediaPlayer().newMedia(file).duration) };
-
-                //add
                 files_.Add(fi_);
-
-                //get longest size char len
                 if (fi_.desc.Length > longest_desc) { longest_desc = fi_.desc.Length; }
                 if (fi_.numb.Length > longest_numb) { longest_numb = fi_.numb.Length; }
             }
             
             string format = "{0,-" + longest_numb + "} {1,-" + longest_desc + "} {2,0}";
-
             Console.WriteLine(format, "Numb", "length", "Path");
-
-            foreach (aFile file in files_)
-            {
-                Console.WriteLine(format, file.numb, file.desc, file.path);
-            }
+            foreach (aFile file in files_) { Console.WriteLine(format, file.numb, file.desc, file.path); }
 
             return 0;
         }
         
-
+        private static void processFile(string file)
+        {
+            if      (MOVE)   { file_mov(file); }
+            else if (DELETE) { file_del(file); }
+        }
+        private static void processFile2(string f1, string f2)
+        {
+            processFile(useSecondItem ? f2 : f1);
+        }
         private static void file_mov(string file)
         {
             try
@@ -830,6 +793,19 @@ namespace fscan
             string[] index = path.Split('\\');
             return index[index.Length - 1];
         }
-        
+        public static string GetImgHash(Bitmap bmpMin)
+        {
+            string lResult = string.Empty;
+            for (int j = 0; j < bmpMin.Height; j++)
+            {
+                for (int i = 0; i < bmpMin.Width; i++)
+                {
+                    //reduce colors to true / false        
+                    Color c = bmpMin.GetPixel(i, j);
+                    lResult += c.R.ToString() + c.G.ToString() + c.B.ToString();
+                }
+            }
+            return lResult;
+        }
     }
 }
