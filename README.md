@@ -3,11 +3,11 @@ file scanner/searcher (C#, console)
 
 > fscan
 ```
-  +===[ ABOUT ]
+ +===[ ABOUT ]
  | ABOUT.....: file scanner/searcher
  | AUTHOR....: 0xC0LD
  | BUILT IN..: VS C# .NET
- | VERSION...: 14
+ | VERSION...: 15
  | USAGE.....: fscan.exe <file/command> <command2> <cmd3> <cmd4> ...
 
  +===[ STANDARD OPTIONS ]
@@ -28,6 +28,7 @@ file scanner/searcher (C#, console)
  | -2 = use second file (del/mov/...) (default)
  | -d = send the found file to recycle bin
  | -m = move the found file to a folder (fscan_dir)
+ | -v = print status
 
  +===[ PRINT (only) OPTIONS ]
  | -la = print file sizes (ascending order)
