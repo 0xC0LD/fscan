@@ -22,7 +22,7 @@ namespace fscan
             Console.WriteLine(" | ABOUT.....: file scanner/searcher");
             Console.WriteLine(" | AUTHOR....: 0xC0LD");
             Console.WriteLine(" | BUILT IN..: VS C# .NET");
-            Console.WriteLine(" | VERSION...: 14");
+            Console.WriteLine(" | VERSION...: 15");
             Console.WriteLine(" | USAGE.....: fscan.exe <file/command> <command2> <cmd3> <cmd4> ...");
             Console.WriteLine("");
             Console.WriteLine(" +===[ STANDARD OPTIONS ]");
@@ -43,6 +43,7 @@ namespace fscan
             Console.WriteLine(" | -2 = use second file (del/mov/...) (default)");
             Console.WriteLine(" | -d = send the found file to recycle bin");
             Console.WriteLine(" | -m = move the found file to a folder (fscan_dir)");
+            Console.WriteLine(" | -v = print status");
             Console.WriteLine("");
             Console.WriteLine(" +===[ PRINT (only) OPTIONS ]");
             Console.WriteLine(" | -la = print file sizes (ascending order)");
@@ -61,6 +62,7 @@ namespace fscan
 
         private static bool DELETE = false;
         private static bool MOVE = false;
+        private static bool VERBOSE = false;
         private readonly static string MOVE_DIR = "fscan_dir";
         public static readonly List<string> VideoTypes = new List<string> { ".mp4", ".webm", ".avi", ".mov", ".mkv", ".flv", ".mpeg", ".mpg", ".wmv", ".mp3", ".ogg" };
         private static System.IO.SearchOption mode = System.IO.SearchOption.TopDirectoryOnly;
@@ -114,6 +116,7 @@ namespace fscan
                     case "-m": { MOVE   = true; break; }
                     case "-1": { useSecondItem = false; break; }
                     case "-2": { useSecondItem = true;  break; }
+                    case "-v": { VERBOSE = true; break; }
                 }
             }
 
@@ -538,12 +541,22 @@ namespace fscan
         
         private static void print_info()
         {
-            while (true)
+            if (VERBOSE)
             {
-                Console.ReadKey(true);
-                Console.WriteLine(": tested " + ScannedCount + " file(s)");
+                while (true)
+                {
+                    Thread.Sleep(1000);
+                    Console.WriteLine(": tested " + ScannedCount + " file(s)");
+                }
             }
-            
+            else
+            {
+                while (true)
+                {
+                    Console.ReadKey(true);
+                    Console.WriteLine(": tested " + ScannedCount + " file(s)");
+                }
+            }
         }
         private static void print_info_end()
         {
