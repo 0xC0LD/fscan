@@ -22,41 +22,37 @@ namespace fscan
             Console.WriteLine(" | ABOUT.....: file scanner/searcher");
             Console.WriteLine(" | AUTHOR....: 0xC0LD");
             Console.WriteLine(" | BUILT IN..: VS C# .NET");
-            Console.WriteLine(" | VERSION...: 15");
+            Console.WriteLine(" | VERSION...: 18");
             Console.WriteLine(" | USAGE.....: fscan.exe <file/command> <command2> <cmd3> <cmd4> ...");
             Console.WriteLine("");
             Console.WriteLine(" +===[ STANDARD OPTIONS ]");
-            Console.WriteLine(" | -c = find duplicate files by name.ext");
-            Console.WriteLine(" | -e = find duplicate files by name");
-            Console.WriteLine(" | -i = find duplicate files by md5 checksum hash");
-            Console.WriteLine(" | -p = find duplicate images (*.jpg, *.jpeg, *.png, *.bmp)");
-            Console.WriteLine(" | -v = find corrupt videos (uses ffmpeg)");
-            Console.WriteLine(" | -s = find video files that have (no) sound/audio (uses ffmpeg)");
-            Console.WriteLine(" |      (t = file with sound, f = file without sound)");
-            Console.WriteLine(" |      (use -t to only print files with sound)");
-            Console.WriteLine(" |      (use -f to only print files without sound)"); 
-            Console.WriteLine(" |      (printed files will be sent to runtime options if specified)");
+            Console.WriteLine(" | name   = find duplicate files by name.ext");
+            Console.WriteLine(" | noext  = find duplicate files by name");
+            Console.WriteLine(" | hash   = find duplicate files by md5 checksum hash (large files will slow down the process)");
+            Console.WriteLine(" | hashf  = find duplicate files by md5 checksum hash, but use a larger byte buffer (faster)");
+            Console.WriteLine(" | byte   = find files that have the same byte size");
+            Console.WriteLine(" | pic    = find duplicate images (*.jpg, *.jpeg, *.png, *.bmp)");
+            Console.WriteLine(" | vid    = find corrupt and playable videos (uses ffmpeg)");
+            Console.WriteLine(" | vidt   = find playable videos (uses ffmpeg)");
+            Console.WriteLine(" | vidf   = find corrupt videos (uses ffmpeg)");
+            Console.WriteLine(" | sound  = print video files that have, and don't have sound/audio (uses ffmpeg)");
+            Console.WriteLine(" | soundt = find video files that have sound/audio (uses ffmpeg)");
+            Console.WriteLine(" | soundf = find video files that don't have sound/audio (uses ffmpeg)");
             Console.WriteLine("");
             Console.WriteLine(" +===[ RUNTIME OPTIONS / OPTIONS WHILE PROCESSING ]");
-            Console.WriteLine(" | -a = also scan subdirectories");
-            Console.WriteLine(" | -1 = use first file (del/mov/...)");
-            Console.WriteLine(" | -2 = use second file (del/mov/...) (default)");
-            Console.WriteLine(" | -d = send the found file to recycle bin");
-            Console.WriteLine(" | -m = move the found file to a folder (fscan_dir)");
-            Console.WriteLine(" | -v = print status");
+            Console.WriteLine(" | all = also scan subdirectories");
+            Console.WriteLine(" | 1   = use first file (del/mov/...)");
+            Console.WriteLine(" | 2   = use second file (del/mov/...) (default)");
+            Console.WriteLine(" | del = send the found file to recycle bin");
+            Console.WriteLine(" | mov = move the found file to a folder (fscan_dir)");
+            Console.WriteLine(" | v   = print status every second");
             Console.WriteLine("");
             Console.WriteLine(" +===[ PRINT (only) OPTIONS ]");
-            Console.WriteLine(" | -la = print file sizes (ascending order)");
-            Console.WriteLine(" | -ld = print file sizes (descending order)");
-            Console.WriteLine(" | -f  = print files with over 260 characters in file path (too long)");
-            Console.WriteLine(" | -ta = print video length (ascending order)");
-            Console.WriteLine(" | -td = print video length (descending order)");
-            Console.WriteLine("");
-            Console.WriteLine(" +===[ EXAMPLES ]");
-            Console.WriteLine(" | > fscan -s -a -f -d");
-            Console.WriteLine(" | (scan all directories (dirs + subdirs) and delete files with no sound)");
-            Console.WriteLine(" | > fscan -c -a -d");
-            Console.WriteLine(" | (scan all directories (dirs + subdirs) and delete duplicate files)");
+            Console.WriteLine(" | sizea = print file sizes (ascending order)");
+            Console.WriteLine(" | sized = print file sizes (descending order)");
+            Console.WriteLine(" | long  = print files with over 260 characters in file path (too long)");
+            Console.WriteLine(" | lena  = print video length (ascending order)");
+            Console.WriteLine(" | lend  = print video length (descending order)");
             Console.WriteLine("");
         }
 
@@ -109,61 +105,44 @@ namespace fscan
             //check for process options
             foreach (string arg in args)
             {
-                switch (arg)
+                switch (arg.ToLower())
                 {
-                    case "-a": { mode = System.IO.SearchOption.AllDirectories; break; }
-                    case "-d": { DELETE = true; break; }
-                    case "-m": { MOVE   = true; break; }
-                    case "-1": { useSecondItem = false; break; }
-                    case "-2": { useSecondItem = true;  break; }
-                    case "-v": { VERBOSE = true; break; }
+                    case "all": { mode = System.IO.SearchOption.AllDirectories; break; }
+                    case "del": { DELETE = true; break; }
+                    case "mov": { MOVE   = true; break; }
+                    case "1":   { useSecondItem = false; break; }
+                    case "2":   { useSecondItem = true;  break; }
+                    case "v":   { VERBOSE = true; break; }
                 }
             }
 
             //scan options
             foreach (string arg in args)
             {
-                switch (arg)
+                switch (arg.ToLower())
                 {
-                    case "-c": { return option_find_dupes(); }
-                    case "-e": { return option_find_dupes_noext(); }
-                    case "-i": { return option_find_dupes_md5hash(); }
-                    case "-p": { return option_find_dupes_img(); }
-                    case "-v":
-                        {
-                            foreach (string arg_ in args)
-                            {
-                                switch (arg_)
-                                {
-                                    case "-t": { ONLY_TRUE = true;  break; }
-                                    case "-f": { ONLY_FALSE = true; break; }
-                                }
-                            }
-
-                            return option_find_unplayablevideos();
-                        }
-                    case "-s":
-                        {
-                            foreach (string arg_ in args)
-                            {
-                                switch (arg_)
-                                {
-                                    case "-t": { ONLY_TRUE = true;  break; }
-                                    case "-f": { ONLY_FALSE = true; break; }
-                                }
-                            }
-
-                            return option_find_mutes();
-                        }
-                    case "-la": { return option_print_size(false); }
-                    case "-ld": { return option_print_size(true); }
-                    case "-f":  { return option_print_longnames(); }
-                    case "-ta": { return option_print_duration(false); }
-                    case "-td": { return option_print_duration(true); }
+                    case "name":   {                    return option_find_dupes();              }
+                    case "noext":  {                    return option_find_dupes_noext();        }
+                    case "hash":   {                    return option_find_dupes_md5hash(false); }
+                    case "hashf":  {                    return option_find_dupes_md5hash(true);  }
+                    case "byte":   {                    return option_find_dupes_byte();         }
+                    case "pic":    {                    return option_find_dupes_img();          }
+                    case "vid":    {                    return option_find_unplayablevideos();   }
+                    case "vidt":   { ONLY_TRUE = true;  return option_find_unplayablevideos();   }
+                    case "vidf":   { ONLY_FALSE = true; return option_find_unplayablevideos();   }
+                    case "sound":  {                    return option_find_mutes();              }
+                    case "soundt": { ONLY_TRUE = true;  return option_find_mutes();              }
+                    case "soundf": { ONLY_FALSE = true; return option_find_mutes();              }
+                    case "sizea":  {                    return option_print_size(false);         }
+                    case "sized":  {                    return option_print_size(true);          }
+                    case "long":   {                    return option_print_longnames();         }
+                    case "lena":   {                    return option_print_duration(false);     }
+                    case "lend":   {                    return option_print_duration(true);      }
                 }
             }
 
-            return 0;
+            Console.WriteLine("Invalid option.");
+            return 1;
         }
         
         private static int scan_single_file(string file)
@@ -231,7 +210,6 @@ namespace fscan
         
         private static int option_find_dupes()
         {
-            Console.WriteLine("> scan option: -c");
             Console.WriteLine("> path: " + Environment.CurrentDirectory);
             string[] files = Directory.GetFiles(Environment.CurrentDirectory, "*.*", mode);
             Console.WriteLine("> found " + files.Length + " file(s)");
@@ -270,7 +248,6 @@ namespace fscan
         }
         private static int option_find_dupes_noext()
         {
-            Console.WriteLine("> scan option: -e");
             Console.WriteLine("> path: " + Environment.CurrentDirectory);
             string[] files = Directory.GetFiles(Environment.CurrentDirectory, "*.*", mode);
             Console.WriteLine("> found " + files.Length + " file(s)");
@@ -309,9 +286,8 @@ namespace fscan
 
             return 0;
         }
-        private static int option_find_dupes_md5hash()
+        private static int option_find_dupes_md5hash(bool fasterLimitedBuffer)
         {
-            Console.WriteLine("> scan option: -i");
             Console.WriteLine("> path: " + Environment.CurrentDirectory);
             string[] files = Directory.GetFiles(Environment.CurrentDirectory, "*.*", mode);
             Console.WriteLine("> found " + files.Length + " file(s)");
@@ -326,7 +302,7 @@ namespace fscan
             Hashtable table = new Hashtable();
             foreach (string file1 in files)
             {
-                string hash1 = CalculateMD5(file1);
+                string hash1 = fasterLimitedBuffer ? CalculateMD5fast(file1) : CalculateMD5(file1);
                 if (table.ContainsKey(hash1))
                 {
                     // get file2 from hash table (file that has been added earlier)
@@ -349,9 +325,47 @@ namespace fscan
 
             return 0;
         }
+        private static int option_find_dupes_byte()
+        {
+            Console.WriteLine("> path: " + Environment.CurrentDirectory);
+            string[] files = Directory.GetFiles(Environment.CurrentDirectory, "*.*", mode);
+            Console.WriteLine("> found " + files.Length + " file(s)");
+            if (files.Length == 0) { return 1; }
+            Console.WriteLine("> starting the comparison...");
+            Console.WriteLine("");
+
+            Thread th = new Thread(print_info) { IsBackground = true };
+            th.Start();
+
+            int count = 0;
+            Hashtable table = new Hashtable();
+            foreach (string file1 in files)
+            {
+                string size1 = new FileInfo(file1).Length.ToString();
+                if (table.ContainsKey(size1))
+                {
+                    // get file2 from hash table (file that has been added earlier)
+                    string file2 = table[size1].ToString();
+
+                    count++;
+                    Console.WriteLine(count + ": " + file1 + " (" + size1 + ")");
+                    Console.WriteLine(count + ": " + file2 + " (" + size1 + ")");
+                    processFile2(file1, file2);
+                    Console.WriteLine("");
+
+                }
+                else { table.Add(size1, file1); }
+
+                ScannedCount++;
+            }
+
+            th.Abort();
+            print_info_end();
+
+            return 0;
+        }
         private static int option_find_dupes_img()
         {
-            Console.WriteLine("> scan option: -p");
             Console.WriteLine("> path: " + Environment.CurrentDirectory);
 
             List<string> files = new List<string>();
@@ -372,7 +386,9 @@ namespace fscan
             foreach (string file1 in files)
             {
                 Image img = Image.FromFile(file1);
-                string hash1 = GetImgHash(new Bitmap(img, new Size(16, 16)));
+                Bitmap bmp = new Bitmap(img, new Size(16, 16));
+                string hash1 = GetImgHash(bmp);
+                bmp.Dispose();
                 img.Dispose();
                 if (table.ContainsKey(hash1))
                 {
@@ -399,7 +415,6 @@ namespace fscan
 
         private static int option_find_mutes()
         {
-            Console.WriteLine("> scan option: -s");
             Console.WriteLine("> path: " + Environment.CurrentDirectory);
 
             //get files
@@ -409,8 +424,6 @@ namespace fscan
 
             Console.WriteLine("> found " + files.Count + " file(s)");
             if (files.Count == 0) { return 1; }
-            Console.WriteLine("> T = true (video has sound)");
-            Console.WriteLine("> F = false (video doesn't have sound)");
             Console.WriteLine("> scanning for audio...");
             Console.WriteLine("");
 
@@ -468,7 +481,6 @@ namespace fscan
         }
         private static int option_find_unplayablevideos()
         {
-            Console.WriteLine("> scan option: -v");
             Console.WriteLine("> path: " + Environment.CurrentDirectory);
 
             //get files
@@ -478,9 +490,7 @@ namespace fscan
 
             Console.WriteLine("> found " + files.Count + " file(s)");
             if (files.Count == 0) { return 1; }
-            Console.WriteLine("> T = true (video is playable)");
-            Console.WriteLine("> F = false (video is unplayable)");
-            Console.WriteLine("> scanning for playable/corrupted videos...");
+            Console.WriteLine("> scanning for playable/corrupt videos...");
             Console.WriteLine("");
 
             if (ONLY_TRUE == false && ONLY_FALSE == false) { ONLY_TRUE = true; ONLY_FALSE = true; }
@@ -565,7 +575,6 @@ namespace fscan
         
         private static int option_print_longnames()
         {
-            Console.WriteLine("> print option: -l");
             Console.WriteLine("> path: " + Environment.CurrentDirectory);
             List<string> files = Directory.GetFiles(Environment.CurrentDirectory, "*.*", mode).ToList();
             Console.WriteLine("> found " + files.Count + " file(s)");
@@ -592,9 +601,6 @@ namespace fscan
         }
         private static int option_print_size(bool descend = false)
         {
-            if (descend) { Console.WriteLine("> print option: -ld"); }
-            else         { Console.WriteLine("> print option: -la"); }
-            
             Console.WriteLine("> path: " + Environment.CurrentDirectory);
 
             string[] files = Directory.GetFiles(Environment.CurrentDirectory, "*.*", mode);
@@ -645,8 +651,6 @@ namespace fscan
         }
         private static int option_print_duration(bool descend = false)
         {
-            if (descend) { Console.WriteLine("> print option: -td"); }
-            else         { Console.WriteLine("> print option: -ta"); }
             Console.WriteLine("> path: " + Environment.CurrentDirectory);
             
             List<string> files = new List<string>();
@@ -795,6 +799,18 @@ namespace fscan
             using (var md5 = MD5.Create())
             {
                 using (var stream = File.OpenRead(path))
+                {
+                    var hash = md5.ComputeHash(stream);
+                    return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+                }
+            }
+        }
+        // only use limited bytes buffer
+        private static string CalculateMD5fast(string path)
+        {
+            using (var md5 = MD5.Create())
+            {
+                using (var stream = new BufferedStream(File.OpenRead(path), 16777216))
                 {
                     var hash = md5.ComputeHash(stream);
                     return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
