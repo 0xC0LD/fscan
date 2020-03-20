@@ -16,21 +16,21 @@
  | ABOUT.....: file scanner/searcher
  | AUTHOR....: 0xC0LD
  | BUILT IN..: VS C# .NET
- | VERSION...: 20
+ | VERSION...: 22
  | USAGE.....: fscan.exe <file/command> <command2> <cmd3> <cmd4> ...
 
  +===[ STANDARD OPTIONS ]
  | name    = find duplicate files by name.ext
  | noext   = find duplicate files by name
  | hash    = find duplicate files by md5 checksum hash
- | hashbuf = find duplicate files by md5 checksum hash, but use a larger byte buffer
+ | hashbuf = find duplicate files by md5 checksum hash, but use a larger byte buffer (1 mil bytes)
  | hashexe = find duplicate files by md5 checksum hash, but use the 'md5sum.exe' to get the file hash
  | byte    = find files that have the same byte size
  | pic     = find duplicate images (*.jpg, *.jpeg, *.png, *.bmp)
  | vid     = find corrupt and playable videos (uses ffmpeg)
- | vidt    = find playable videos (uses ffmpeg)
- | vidf    = find corrupt videos (uses ffmpeg)
- | sound   = print video files that have, and don't have sound/audio (uses ffmpeg)
+ | vidt    = find playable video files (uses ffmpeg)
+ | vidf    = find corrupt video files (uses ffmpeg)
+ | sound   = print video files that have, and don't have sound/audio (uses ffprobe)
  | soundt  = find video files that have sound/audio (uses ffprobe)
  | soundf  = find video files that don't have sound/audio (uses ffprobe)
 
