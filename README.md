@@ -1,10 +1,10 @@
 # fscan - file (duplicates) scanner/searcher (C#, console)
 - Easily: find duplicate files / compare files.
 
-### DOWNLOAD
+## DOWNLOAD
 \[[here](https://github.com/0xC0LD/fscan/raw/master/fscan/fscan/bin/Release/fscan.exe)\]
 
-### HELP
+## HELP
 > fscan
 ```
  +===[ ABOUT ]
@@ -61,7 +61,7 @@
  | lend     = print video length in descending order (uses ffprobe)
 ```
 
-### EXAMPLES
+## EXAMPLES
 ```
 > fscan hash              = just print files that are the same
 > fscan hash all del      = find files that are the same and delete them
