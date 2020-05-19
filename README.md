@@ -10,8 +10,8 @@
  +===[ ABOUT ]
  | ABOUT.....: file scanner/searcher
  | AUTHOR....: 0xC0LD
- | BUILT IN..: VS C# .NET
- | VERSION...: 28
+ | BUILT IN..: VS C# .NET 4.5
+ | VERSION...: 33
  | USAGE.....: fscan.exe <file/command> <command2> <cmd3> <cmd4> ...
 
  +===[ STANDARD OPTIONS ]
@@ -22,40 +22,30 @@
  | | hashbuf = find duplicate files by md5 checksum hash, but use a larger byte buffer (1 mil bytes)
  | | hashexe = find duplicate files by md5 checksum hash, but use the 'md5sum.exe' to get the file hash
  | | byte    = find files that have the same byte size
- | | pic     = find duplicate images (*.jpg, *.jpeg, *.png, *.bmp)
+ | | pic     = find duplicate images (resize image to 16x16 -> compare pixels)
+ | | pic2    = find duplicate images (resize image to 16x16 -> average out the RGB -> compare pixels)
  |
  | +==[ FIND FILES THAT ___ (FFT) ]
  | | vid     = find corrupt and playable videos (uses ffmpeg)
- | | vid_    = find corrupt and playable videos (uses ffmpeg), multithreaded (experimental, not finished)
  | | vidt    = find playable video files (uses ffmpeg)
  | | vidf    = find corrupt video files (uses ffmpeg)
- | | vidt_   = find playable video files (uses ffmpeg), multithreaded (experimental, not finished)
- | | vidf_   = find corrupt video files (uses ffmpeg), multithreaded (experimental, not finished)
  | | sound   = print video files that have, and don't have sound/audio (uses ffprobe)
- | | sound_  = print video files that have, and don't have sound/audio (uses ffprobe), multithreaded (experimental, not finished)
  | | soundt  = find video files that have sound/audio (uses ffprobe)
  | | soundf  = find video files that don't have sound/audio (uses ffprobe)
- | | soundt_ = find video files that have sound/audio (uses ffprobe), multithreaded (experimental, not finished)
- | | soundf_ = find video files that don't have sound/audio (uses ffprobe), multithreaded (experimental, not finished)
  | | long    = find files with over 260 characters in file path (too long)
 
  +===[ RUNTIME OPTIONS / OPTIONS WHILE PROCESSING ]
  | all     = also scan subdirectories
  | del     = send the found file to recycle bin
  | mov     = move the found file to a folder (fscan_dir)
- | v       = print status every 5000 ms
- | vv      = print status every 3000 ms
- | vvv     = print status every 1000 ms
- | vvvv    = print status every  500 ms
- | vvvvv   = print status every  250 ms
- | vvvvvv  = print status every  100 ms
- | vvvvvvv = print status every   50 ms
+ | vXXXX   = print status every XXXX ms
  |
  | +==[ FDF ]
- | | 1   = use the first file (del/mov/...)
- | | 2   = use the second file (del/mov/...) (default)
- | | ask = when a dupe is found prompt on what to do with the files
- | | end = print/process files when the file scanning/comparing is finished
+ | | 1     = use the first file (del/mov/...)
+ | | 2     = use the second file (del/mov/...) (default)
+ | | ask   = when a dupe is found prompt on what to do with the files
+ | | end   = print/process files when the file scanning/comparing is finished
+ | | nomd5 = don't calculate/print the md5 checksum of files
 
  +===[ PRINT ONLY OPTIONS / SORT OPTIONS ]
  | sizea    = print file sizes in ascending order
@@ -70,6 +60,11 @@
  | dated    = print file creation dates in descending order
  | lena     = print video length in ascending order (uses ffprobe)
  | lend     = print video length in descending order (uses ffprobe)
+
+ +===[ OPTION_ = use multithreading (extremely fast, experimental, not finished) ]
+ | name_, noext_, hash_, hashbuf_, hashexe_, byte_, pic_, pic2_
+ | vid_, vidt_, vidf_, sound_, soundt_, soundf_,
+ | lena_, lend_
 ```
 
 ## EXAMPLES
