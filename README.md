@@ -8,10 +8,10 @@
 > fscan
 ```
  +===[ ABOUT ]
- | ABOUT.....: file scanner/searcher
+ | ABOUT.....: compare/scan/id files
  | AUTHOR....: 0xC0LD
  | BUILT IN..: VS C# .NET 4.5
- | VERSION...: 33
+ | VERSION...: 35
  | USAGE.....: fscan.exe <file/command> <command2> <cmd3> <cmd4> ...
 
  +===[ STANDARD OPTIONS ]
@@ -19,7 +19,7 @@
  | | name    = find duplicate files by name.ext
  | | noext   = find duplicate files by name
  | | hash    = find duplicate files by md5 checksum hash
- | | hashbuf = find duplicate files by md5 checksum hash, but use a larger byte buffer (1 mil bytes)
+ | | hashbuf = find duplicate files by md5 checksum hash, but use a larger byte buffer (1 mil bytes) (faster)
  | | hashexe = find duplicate files by md5 checksum hash, but use the 'md5sum.exe' to get the file hash
  | | byte    = find files that have the same byte size
  | | pic     = find duplicate images (resize image to 16x16 -> compare pixels)
@@ -33,12 +33,13 @@
  | | soundt  = find video files that have sound/audio (uses ffprobe)
  | | soundf  = find video files that don't have sound/audio (uses ffprobe)
  | | long    = find files with over 260 characters in file path (too long)
+ | | md5name = find files with a MD5 hash name
 
  +===[ RUNTIME OPTIONS / OPTIONS WHILE PROCESSING ]
- | all     = also scan subdirectories
- | del     = send the found file to recycle bin
- | mov     = move the found file to a folder (fscan_dir)
- | vXXXX   = print status every XXXX ms
+ | all      = also scan subdirectories
+ | del      = send the found file to recycle bin
+ | mov      = move the found file to a folder (fscan_dir)
+ | statXXXX = print status every XXXX ms
  |
  | +==[ FDF ]
  | | 1     = use the first file (del/mov/...)
