@@ -24,7 +24,7 @@ namespace fscan
             Console.WriteLine(" | ABOUT.....: compare/scan/id files");
             Console.WriteLine(" | AUTHOR....: 0xC0LD");
             Console.WriteLine(" | BUILT IN..: VS C# .NET 4.5");
-            Console.WriteLine(" | VERSION...: 35");
+            Console.WriteLine(" | VERSION...: 37");
             Console.WriteLine(" | USAGE.....: fscan.exe <file/command> <command2> <cmd3> <cmd4> ...");
             Console.WriteLine("");
             Console.WriteLine(" +===[ STANDARD OPTIONS ]");
@@ -107,143 +107,124 @@ namespace fscan
 
         static int Main(string[] args)
         {
-            if (args.Length == 0) { print_help(); return 1; }
-            if (args.Length == 1)
+            try
             {
-                if (args[0] == "--help"
-                || args[0] == "-help"
-                || args[0] == "help"
-                || args[0] == "--h"
-                || args[0] == "-h"
-                || args[0] == "h"
-                || args[0] == "/?"
-                )
+                if (args.Length == 0) { print_help(); return 1; }
+                if (args.Length == 1 && File.Exists(args[0])) { return scan_single_file(args[0]); }
+
+                //check for process options
+                foreach (string arg in args)
                 {
-                    print_help(); return 0;
+                    if (arg.StartsWith("stat"))
+                    {
+                        string val = arg.Remove(0, 4);
+                        VERBOSE = true; VERBOSE_DELAY = int.TryParse(val, out int res) ? res : 1000;
+                    }
+                    else
+                    {
+                        switch (arg.ToLower())
+                        {
+                            case "all":   { mode = System.IO.SearchOption.AllDirectories; break; }
+                            case "del":   { DELETE = true; break; }
+                            case "mov":   { MOVE   = true; break; }
+                            case "ask":   { PROMPT = true; break; }
+                            case "nomd5": { NOMD5  = true; break; }
+                            case "end":   { END    = true; break; }
+                            case "1":     { useSecondItem = false; break; }
+                            case "2":     { useSecondItem = true;  break; }
+                        }
+                    }
                 }
 
-                if (File.Exists(args[0]))
-                {
-                    scan_single_file(args[0]);
-                    return 1;
-                }
-            }
-            
-            //check for process options
-            foreach (string arg in args)
-            {
-                if (arg.StartsWith("stat"))
-                {
-                    string val = arg.Remove(0, 4);
-                    VERBOSE = true; VERBOSE_DELAY = int.TryParse(val, out int res) ? res : 1000;
-                }
-                else
+                int ret = 1;
+                foreach (string arg in args)
                 {
                     switch (arg.ToLower())
                     {
-                        case "all":   { mode = System.IO.SearchOption.AllDirectories; break; }
-                        case "del":   { DELETE = true; break; }
-                        case "mov":   { MOVE   = true; break; }
-                        case "ask":   { PROMPT = true; break; }
-                        case "nomd5": { NOMD5  = true; break; }
-                        case "end":   { END    = true; break; }
-                        case "1":     { useSecondItem = false; break; }
-                        case "2":     { useSecondItem = true;  break; }
+                        case "name":     {                    ret = option_find_dupes(0);                  break; }
+                        case "noext":    {                    ret = option_find_dupes(1);                  break; }
+                        case "byte":     {                    ret = option_find_dupes(2);                  break; }
+                        case "hash":     {                    ret = option_find_dupes(10);                 break; }
+                        case "hashbuf":  {                    ret = option_find_dupes(11);                 break; }
+                        case "hashexe":  {                    ret = option_find_dupes(12);                 break; }
+                        case "pic":      {                    ret = option_find_dupes(20);                 break; }
+                        case "pic2":     {                    ret = option_find_dupes(21);                 break; }
+                        case "name_":    {                    ret = option_find_dupes_threaded(0);         break; }
+                        case "noext_":   {                    ret = option_find_dupes_threaded(1);         break; }
+                        case "byte_":    {                    ret = option_find_dupes_threaded(2);         break; }
+                        case "hash_":    {                    ret = option_find_dupes_threaded(10);        break; }
+                        case "hashbuf_": {                    ret = option_find_dupes_threaded(11);        break; }
+                        case "hashexe_": {                    ret = option_find_dupes_threaded(12);        break; }
+                        case "pic_":     {                    ret = option_find_dupes_threaded(20);        break; }
+                        case "pic2_":    {                    ret = option_find_dupes_threaded(21);        break; }
+                        case "vid":      {                    ret = option_find_unplayablevideos(false);   break; }
+                        case "vidt":     { ONLY_TRUE  = true; ret = option_find_unplayablevideos(false);   break; }
+                        case "vidf":     { ONLY_FALSE = true; ret = option_find_unplayablevideos(false);   break; }
+                        case "vid_":     {                    ret = option_find_unplayablevideos(true);    break; }
+                        case "vidt_":    { ONLY_TRUE  = true; ret = option_find_unplayablevideos(true);    break; }
+                        case "vidf_":    { ONLY_FALSE = true; ret = option_find_unplayablevideos(true);    break; }
+                        case "sound":    {                    ret = option_find_mutes(false);              break; }
+                        case "soundt":   { ONLY_TRUE  = true; ret = option_find_mutes(false);              break; }
+                        case "soundf":   { ONLY_FALSE = true; ret = option_find_mutes(false);              break; }
+                        case "sound_":   {                    ret = option_find_mutes(true);               break; }
+                        case "soundt_":  { ONLY_TRUE  = true; ret = option_find_mutes(true);               break; }
+                        case "soundf_":  { ONLY_FALSE = true; ret = option_find_mutes(true);               break; }
+                        case "sizea":    {                    ret = option_print_size(false);              break; }
+                        case "sized":    {                    ret = option_print_size(true);               break; }
+                        case "dsizea":   {                    ret = option_print_dirSize(false);           break; }
+                        case "dsized":   {                    ret = option_print_dirSize(true);            break; }
+                        case "dcounta":  {                    ret = option_print_dirCount(false);          break; }
+                        case "dcountd":  {                    ret = option_print_dirCount(true);           break; }
+                        case "rdcounta": {                    ret = option_print_dirCount(false, true);    break; }
+                        case "rdcountd": {                    ret = option_print_dirCount(true, true);     break; }
+                        case "datea":    {                    ret = option_print_date(false);              break; }
+                        case "dated":    {                    ret = option_print_date(true);               break; }
+                        case "long":     {                    ret = option_find_longnames();               break; }
+                        case "md5name":  {                    ret = option_find_md5names();                break; }
+                        case "lena":     {                    ret = option_print_duration(false);          break; }
+                        case "lend":     {                    ret = option_print_duration(true);           break; }
+                        case "lena_":    {                    ret = option_print_duration_threaded(false); break; }
+                        case "lend_":    {                    ret = option_print_duration_threaded(true);  break; }
                     }
                 }
+
+                print_info_end();
+
+                return ret;
             }
+            catch (Exception e) { Console.Error.WriteLine("# ERROR: " + e.Message); }
 
-            int ret = 1;
-            foreach (string arg in args)
-            {
-                switch (arg.ToLower())
-                {
-                    case "name":     {                    ret = option_find_dupes(0);                  break; }
-                    case "noext":    {                    ret = option_find_dupes(1);                  break; }
-                    case "byte":     {                    ret = option_find_dupes(2);                  break; }
-                    case "hash":     {                    ret = option_find_dupes(10);                 break; }
-                    case "hashbuf":  {                    ret = option_find_dupes(11);                 break; }
-                    case "hashexe":  {                    ret = option_find_dupes(12);                 break; }
-                    case "pic":      {                    ret = option_find_dupes(20);                 break; }
-                    case "pic2":     {                    ret = option_find_dupes(21);                 break; }
-                    case "name_":    {                    ret = option_find_dupes_threaded(0);         break; }
-                    case "noext_":   {                    ret = option_find_dupes_threaded(1);         break; }
-                    case "byte_":    {                    ret = option_find_dupes_threaded(2);         break; }
-                    case "hash_":    {                    ret = option_find_dupes_threaded(10);        break; }
-                    case "hashbuf_": {                    ret = option_find_dupes_threaded(11);        break; }
-                    case "hashexe_": {                    ret = option_find_dupes_threaded(12);        break; }
-                    case "pic_":     {                    ret = option_find_dupes_threaded(20);        break; }
-                    case "pic2_":    {                    ret = option_find_dupes_threaded(21);        break; }
-                    case "vid":      {                    ret = option_find_unplayablevideos(false);   break; }
-                    case "vidt":     { ONLY_TRUE  = true; ret = option_find_unplayablevideos(false);   break; }
-                    case "vidf":     { ONLY_FALSE = true; ret = option_find_unplayablevideos(false);   break; }
-                    case "vid_":     {                    ret = option_find_unplayablevideos(true);    break; }
-                    case "vidt_":    { ONLY_TRUE  = true; ret = option_find_unplayablevideos(true);    break; }
-                    case "vidf_":    { ONLY_FALSE = true; ret = option_find_unplayablevideos(true);    break; }
-                    case "sound":    {                    ret = option_find_mutes(false);              break; }
-                    case "soundt":   { ONLY_TRUE  = true; ret = option_find_mutes(false);              break; }
-                    case "soundf":   { ONLY_FALSE = true; ret = option_find_mutes(false);              break; }
-                    case "sound_":   {                    ret = option_find_mutes(true);               break; }
-                    case "soundt_":  { ONLY_TRUE  = true; ret = option_find_mutes(true);               break; }
-                    case "soundf_":  { ONLY_FALSE = true; ret = option_find_mutes(true);               break; }
-                    case "sizea":    {                    ret = option_print_size(false);              break; }
-                    case "sized":    {                    ret = option_print_size(true);               break; }
-                    case "dsizea":   {                    ret = option_print_dirSize(false);           break; }
-                    case "dsized":   {                    ret = option_print_dirSize(true);            break; }
-                    case "dcounta":  {                    ret = option_print_dirCount(false);          break; }
-                    case "dcountd":  {                    ret = option_print_dirCount(true);           break; }
-                    case "rdcounta": {                    ret = option_print_dirCount(false, true);    break; }
-                    case "rdcountd": {                    ret = option_print_dirCount(true, true);     break; }
-                    case "datea":    {                    ret = option_print_date(false);              break; }
-                    case "dated":    {                    ret = option_print_date(true);               break; }
-                    case "long":     {                    ret = option_find_longnames();               break; }
-                    case "md5name":  {                    ret = option_find_md5names();                break; }
-                    case "lena":     {                    ret = option_print_duration(false);          break; }
-                    case "lend":     {                    ret = option_print_duration(true);           break; }
-                    case "lena_":    {                    ret = option_print_duration_threaded(false); break; }
-                    case "lend_":    {                    ret = option_print_duration_threaded(true);  break; }
-                }
-            }
-
-            print_info_end();
-
-            return ret;
+            return 1;
         }
         
         private static int scan_single_file(string file)
         {
-            if (file.Length >= 260)
+            if (file.Length >= 260) { Console.WriteLine("! file name too long... must be less than 260 characters...");  return 1; }
+
+            FileInfo fi = new FileInfo(file);
+            Console.WriteLine("# file name . . . . : " + fi.Name);
+            Console.WriteLine("# file path . . . . : " + fi.FullName);
+            Console.WriteLine("# file's directory. : " + fi.Directory);
+            Console.WriteLine("# file size . . . . : " + ROund(fi.Length) + " (" + fi.Length + " bytes)");
+            Console.WriteLine("# creation time . . : " + fi.CreationTime);
+            Console.WriteLine("# last access time. : " + fi.LastAccessTime);
+            Console.WriteLine("# last write time . : " + fi.LastWriteTime);
+            Console.WriteLine("# file id . . . . . : " + GetFileID(fi.FullName).ToString());
+            Console.WriteLine("# md5 checksum hash.: " + CalculateMD5(fi.FullName));
+
+            if (VideoTypes.Contains(fi.Extension.ToLower()))
             {
-                Console.WriteLine("! file name too long... must be less than 260 characters...");
-                return 1;
+                Console.WriteLine("# is playable. . . .: " + isPlayable(fi.FullName));
+                Console.WriteLine("# has audio. . . . .: " + hasAudio(fi.FullName));
+                Tuple<string, string, string> VideoInfo = getVideoInfo(fi.FullName);
+                if (!string.IsNullOrEmpty(VideoInfo.Item1)) { Console.WriteLine("# duration . . . . .: " + VideoInfo.Item1); }
+                if (!string.IsNullOrEmpty(VideoInfo.Item2)) { Console.WriteLine("# title. . . . . . .: " + VideoInfo.Item2); }
+                if (!string.IsNullOrEmpty(VideoInfo.Item3)) { Console.WriteLine("# encoder. . . . . .: " + VideoInfo.Item3); }
             }
-            else
-            {
-                FileInfo fi = new FileInfo(file);
-                Console.WriteLine("# file name . . . . : " + fi.Name);
-                Console.WriteLine("# file path . . . . : " + fi.FullName);
-                Console.WriteLine("# file's directory. : " + fi.Directory);
-                Console.WriteLine("# file size . . . . : " + ROund(fi.Length) + " (" + fi.Length + " bytes)");
-                Console.WriteLine("# creation time . . : " + fi.CreationTime);
-                Console.WriteLine("# last access time. : " + fi.LastAccessTime);
-                Console.WriteLine("# last write time . : " + fi.LastWriteTime);
-                Console.WriteLine("# file id . . . . . : " + GetFileID(fi.FullName).ToString());
-                Console.WriteLine("# md5 checksum hash.: " + CalculateMD5(fi.FullName));
 
-                if (VideoTypes.Contains(fi.Extension.ToLower()))
-                {
-                    Console.WriteLine("# is playable. . . .: " + isPlayable(fi.FullName));
-                    Console.WriteLine("# has audio. . . . .: " + hasAudio(fi.FullName));
-                    Tuple<string, string, string> VideoInfo = getVideoInfo(fi.FullName);
-                    if (!string.IsNullOrEmpty(VideoInfo.Item1)) { Console.WriteLine("# duration . . . . .: " + VideoInfo.Item1); }
-                    if (!string.IsNullOrEmpty(VideoInfo.Item2)) { Console.WriteLine("# title. . . . . . .: " + VideoInfo.Item2); }
-                    if (!string.IsNullOrEmpty(VideoInfo.Item3)) { Console.WriteLine("# encoder. . . . . .: " + VideoInfo.Item3); }
-                }
+            gl_tested++;
 
-                gl_tested++;
-
-                print_info_end();
-            }
+            print_info_end();
             return 0;
         }
 
@@ -266,7 +247,6 @@ namespace fscan
                 case 20:
                 case 21: for (int i = 0; i < ImageTypes.Length; i++) { files.AddRange(di.GetFiles("*" + ImageTypes[i], mode)); } break;
             }
-            if (files == null) { return 1; }
 
             Console.WriteLine("# found " + files.Count + " file(s)");
             if (files.Count == 0) { return 1; }
@@ -331,7 +311,6 @@ namespace fscan
                 case 20:
                 case 21: foreach (string type in ImageTypes) { files.AddRange(di.GetFiles("*" + type, mode)); } break;
             }
-            if (files == null) { return 1; }
 
             Console.WriteLine("# found " + files.Count + " file(s)");
             if (files.Count == 0) { return 1; }
